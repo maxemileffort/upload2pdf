@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Grid Uploader with Selection Slider</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #imageGrid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+            margin-bottom: 100px; /* Space for the slider */
+        }
+        .gridItem {
+            aspect-ratio: 1;
+            background-color: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+        }
+        .gridItem img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+        }
+        .gridItem.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 2px 5px;
+            border-radius: 50%;
+        }
+        button, input[type="file"] {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #statusMessage {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        #selectionSlider {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+        }
+        #selectedImages {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            flex-grow: 1;
+        }
+        #selectedImages img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+        }
+        #sliderButtons {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Grid Uploader</h1>
+    
+    <h2>Upload from Device</h2>
+    <input type="file" id="imageInput" accept="image/*" multiple>
+    <button id="uploadButton">Upload Images</button>
+    
+    <h2>Instagram Integration</h2>
+    <button id="connectButton">Connect to Instagram</button>
+    <button id="loadImagesButton" style="display: none;">Load Instagram Images</button>
+    
+    <div id="statusMessage"></div>
+    <div id="imageGrid"></div>
+
+    <div id="selectionSlider">
+        <div id="selectedImages"></div>
+        <div id="sliderButtons">
+            <button id="sendImagesButton">Send Images</button>
+            <button id="clearSelectionButton">Clear Selection</button>
+        </div>
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const uploadButton = document.getElementById('uploadButton');
+        const connectButton = document.getElementById('connectButton');
+        const loadImagesButton = document.getElementById('loadImagesButton');
+        const statusMessage = document.getElementById('statusMessage');
+        const imageGrid = document.getElementById('imageGrid');
+        const selectionSlider = document.getElementById('selectionSlider');
+        const selectedImages = document.getElementById('selectedImages');
+        const clearSelectionButton = document.getElementById('clearSelectionButton');
+        const sendImagesButton = document.getElementById('sendImagesButton');
+        let accessToken = null;
+        let selectedFiles = [];
+        let selectedImageSources = new Set();
+
+        imageInput.addEventListener('change', (event) => {
+            selectedFiles = Array.from(event.target.files).slice(0, 9);
+            statusMessage.textContent = `${selectedFiles.length} file(s) selected`;
+        });
+
+        uploadButton.addEventListener('click', uploadLocalImages);
+        connectButton.addEventListener('click', connectToInstagram);
+        loadImagesButton.addEventListener('click', loadInstagramImages);
+        clearSelectionButton.addEventListener('click', clearSelection);
+        sendImagesButton.addEventListener('click', sendImagesToServer);
+
+        function uploadLocalImages() {
+            imageGrid.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                if (index < 9) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        addImageToGrid(e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            statusMessage.textContent = `Uploaded ${selectedFiles.length} image(s)`;
+        }
+
+        function connectToInstagram() {
+            statusMessage.textContent = "Connecting to Instagram...";
+            setTimeout(() => {
+                accessToken = "simulated_access_token";
+                statusMessage.textContent = "Connected to Instagram!";
+                connectButton.style.display = 'none';
+                loadImagesButton.style.display = 'inline-block';
+            }, 2000);
+        }
+
+        function loadInstagramImages() {
+            if (!accessToken) {
+                statusMessage.textContent = "Please connect to Instagram first.";
+                return;
+            }
+
+            statusMessage.textContent = "Loading images from Instagram...";
+            
+            setTimeout(() => {
+                const sampleImages = [
+                    'https://via.placeholder.com/300x300.png?text=Instagram+1',
+                    'https://via.placeholder.com/300x300.png?text=Instagram+2',
+                    'https://via.placeholder.com/300x300.png?text=Instagram+3',
+                    'https://via.placeholder.com/300x300.png?text=Instagram+4',
+                    'https://via.placeholder.com/300x300.png?text=Instagram+5',
+                    'https://via.placeholder.com/300x300.png?text=Instagram+6',
+                    'https://via.placeholder.com/300x300.png?text=Instagram+7',
+                    'https://via.placeholder.com/300x300.png?text=Instagram+8',
+                    'https://via.placeholder.com/300x300.png?text=Instagram+9'
+                ];
+
+                imageGrid.innerHTML = '';
+                sampleImages.forEach(src => addImageToGrid(src));
+
+                statusMessage.textContent = "Images loaded successfully!";
+            }, 2000);
+        }
+
+        function addImageToGrid(src) {
+            const gridItem = document.createElement('div');
+            gridItem.className = 'gridItem';
+            const img = document.createElement('img');
+            img.src = src;
+            gridItem.appendChild(img);
+            imageGrid.appendChild(gridItem);
+
+            gridItem.addEventListener('click', () => toggleImageSelection(gridItem, src));
+        }
+
+        function toggleImageSelection(gridItem, src) {
+            gridItem.classList.toggle('selected');
+            if (selectedImageSources.has(src)) {
+                selectedImageSources.delete(src);
+            } else {
+                selectedImageSources.add(src);
+            }
+            updateSelectionSlider();
+        }
+
+        function updateSelectionSlider() {
+            selectedImages.innerHTML = '';
+            selectedImageSources.forEach(src => {
+                const img = document.createElement('img');
+                img.src = src;
+                selectedImages.appendChild(img);
+            });
+            selectionSlider.style.display = selectedImageSources.size > 0 ? 'flex' : 'none';
+        }
+
+        function clearSelection() {
+            selectedImageSources.clear();
+            document.querySelectorAll('.gridItem').forEach(item => item.classList.remove('selected'));
+            updateSelectionSlider();
+        }
+
+        function sendImagesToServer() {
+            statusMessage.textContent = "Sending images to server...";
+            
+            // Simulate sending images to a server
+            setTimeout(() => {
+                statusMessage.textContent = `Successfully sent ${selectedImageSources.size} image(s) to the server.`;
+                // In a real application, you would send the images to your server here
+                // For example, using fetch() or XMLHttpRequest
+                
+                // After sending, clear the selection
+                clearSelection();
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
