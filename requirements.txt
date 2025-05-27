@@ -1,0 +1,4 @@
+streamlit
+pydrive2
+pillow
+pypdf2
